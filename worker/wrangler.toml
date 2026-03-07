@@ -1,0 +1,16 @@
+name = "sequence-worker"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# After running `wrangler d1 create sequence-db`, paste the database_id below
+[[d1_databases]]
+binding = "DB"
+database_name = "sequence-db"
+database_id = "3665b117-1a9a-43c6-88bf-ff116005d991"
+
+[vars]
+# Override this in production via Cloudflare dashboard
+FRONTEND_URL = "https://sequence-6cp.pages.dev/"
+
+# JWT_SECRET must be set as a secret (never in this file):
+# Run: wrangler secret put JWT_SECRET
