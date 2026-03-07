@@ -186,35 +186,35 @@ function countSharedCells(a: Sequence, b: Sequence): number {
   return b.cells.filter(c => setA.has(`${c.row},${c.col}`)).length;
 }
 
-// Return the sequences that legitimately count toward the win.
-// Two sequences may share AT MOST 1 chip (the official rule).
-// A 6-in-a-row only counts as 1 sequence because any two windows of 5
-// within it share 4 chips.
-function getValidSequencesForCount(all: Sequence[]): Sequence[] {
-  if (all.length <= 1) return all;
 
-  // Find any pair sharing ≤ 1 chip — that's the 2-sequence win.
-  for (let i = 0; i < all.length; i++) {
-    for (let j = i + 1; j < all.length; j++) {
-      if (countSharedCells(all[i], all[j]) <= 1) {
-        return [all[i], all[j]];
-      }
-    }
+// Find one new sequence from `detected` that is compatible with all
+// already-counted sequences (shares at most 1 chip with each).
+function findNewSequence(existing: Sequence[], detected: Sequence[]): Sequence | null {
+  for (const candidate of detected) {
+    const compatible = existing.every(ex => countSharedCells(ex, candidate) <= 1);
+    if (compatible) return candidate;
   }
-
-  // All detected sequences heavily overlap — only 1 counts.
-  return [all[0]];
+  return null;
 }
 
 function updateSequences(state: GameState): void {
   const detected = detectAllSequences(state.board);
 
-  // Only store sequences that legitimately count toward the win.
-  state.playerSequences = getValidSequencesForCount(detected.player);
-  state.aiSequences = getValidSequencesForCount(detected.ai);
+  // Never replace existing counted sequences — only add to them.
+  // This ensures locked sequences stay fixed even when adjacent chips
+  // create new overlapping 5-in-a-row windows on subsequent moves.
+  if (state.playerSequences.length < 2) {
+    const next = findNewSequence(state.playerSequences, detected.player);
+    if (next) state.playerSequences = [...state.playerSequences, next];
+  }
 
-  // Lock only the exact 5 chips that belong to each counted sequence.
-  // Adjacent chips outside the sequence remain unlocked and removable.
+  if (state.aiSequences.length < 2) {
+    const next = findNewSequence(state.aiSequences, detected.ai);
+    if (next) state.aiSequences = [...state.aiSequences, next];
+  }
+
+  // Lock only the exact cells of each counted sequence.
+  // Adjacent chips placed later are NOT marked inSequence.
   for (const seq of [...state.playerSequences, ...state.aiSequences]) {
     for (const { row, col } of seq.cells) {
       state.board[row][col].inSequence = true;

@@ -84,6 +84,7 @@ export default function GameScreen({ username, onLogout }: Props) {
   async function handleCellClick(row: number, col: number) {
     if (!selectedCard || !gameState || isLoading) return;
     if (gameState.currentTurn !== 'player') return;
+    if (!validTargets.some(t => t.row === row && t.col === col)) return;
 
     // Capture state before any mutation — this is what gets sent to the API.
     const snapshot = gameState;
