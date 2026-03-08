@@ -32,12 +32,14 @@ export interface GameState {
   gameOver: boolean;
   winner: 'player' | 'ai' | null;
   message: string;
+  pendingSequenceChoice?: Sequence[];  // set when player must choose which 5 chips to lock
 }
 
 export type Move =
-  | { type: 'place';    cardId: string; row: number; col: number }
-  | { type: 'remove';   cardId: string; row: number; col: number }
-  | { type: 'deadcard'; cardId: string };
+  | { type: 'place';          cardId: string; row: number; col: number }
+  | { type: 'remove';         cardId: string; row: number; col: number }
+  | { type: 'deadcard';       cardId: string }
+  | { type: 'chooseSequence'; cells: { row: number; col: number }[] };
 
 // ─── Card helpers ─────────────────────────────────────────────────────────────
 
@@ -197,6 +199,13 @@ function findNewSequence(existing: Sequence[], detected: Sequence[]): Sequence |
   return null;
 }
 
+// Find ALL new compatible sequences — used to detect ambiguous 6-in-a-row cases.
+function findAllNewSequences(existing: Sequence[], detected: Sequence[]): Sequence[] {
+  return detected.filter(candidate =>
+    existing.every(ex => countSharedCells(ex, candidate) <= 1)
+  );
+}
+
 function updateSequences(state: GameState): void {
   const detected = detectAllSequences(state.board);
 
@@ -293,7 +302,56 @@ export function applyPlayerMove(state: GameState, move: Move): GameState {
   s.discardPile.push(card);
   if (s.deck.length > 0) s.playerHand.push(s.deck.shift()!);
 
+  // Check how many valid new sequence windows were just created.
+  const detected = detectAllSequences(s.board);
+  const newCandidates = findAllNewSequences(s.playerSequences, detected.player);
+
+  if (newCandidates.length > 1) {
+    // Multiple overlapping windows — player must choose which 5 to lock.
+    s.pendingSequenceChoice = newCandidates;
+    s.message = 'You formed a sequence! Choose which 5 chips to lock in.';
+    return s;  // currentTurn stays 'player'; AI waits
+  }
+
+  // 0 or 1 candidate — lock immediately (existing behaviour).
   updateSequences(s);
+
+  if (s.playerSequences.length >= 2) {
+    s.gameOver = true;
+    s.winner = 'player';
+    s.message = 'You win! Congratulations!';
+    return s;
+  }
+
+  s.currentTurn = 'ai';
+  s.message = 'AI is thinking…';
+  return s;
+}
+
+// ─── Apply sequence choice ────────────────────────────────────────────────────
+
+export function applyChooseSequence(state: GameState, move: { type: 'chooseSequence'; cells: { row: number; col: number }[] }): GameState {
+  const s = deepClone(state);
+
+  if (!s.pendingSequenceChoice || s.pendingSequenceChoice.length === 0) {
+    throw new Error('No pending sequence choice');
+  }
+
+  // Validate submitted cells exactly match one of the pending options.
+  const cellKey = (r: number, c: number) => `${r},${c}`;
+  const submitSet = new Set(move.cells.map(cell => cellKey(cell.row, cell.col)));
+  const chosen = s.pendingSequenceChoice.find(seq => {
+    const seqSet = new Set(seq.cells.map(cell => cellKey(cell.row, cell.col)));
+    return seqSet.size === submitSet.size && [...seqSet].every(k => submitSet.has(k));
+  });
+
+  if (!chosen) throw new Error('Chosen cells do not match any pending sequence option');
+
+  s.playerSequences = [...s.playerSequences, chosen];
+  for (const { row, col } of chosen.cells) {
+    s.board[row][col].inSequence = true;
+  }
+  delete s.pendingSequenceChoice;
 
   if (s.playerSequences.length >= 2) {
     s.gameOver = true;

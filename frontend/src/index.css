@@ -474,6 +474,43 @@ body {
 .played-by-label.player { color: var(--player-blue); }
 .played-by-label.ai     { color: var(--ai-green); }
 
+/* ─── Sequence choice picker ────────────────────────────────────────────────── */
+.board-cell.sequence-candidate {
+  box-shadow: 0 0 0 2px var(--gold);
+  background: #fff8dc;
+  z-index: 3;
+}
+
+@keyframes pulse-gold {
+  0%   { transform: scale(0.85); opacity: 0.8; }
+  50%  { transform: scale(1.05); opacity: 0.4; }
+  100% { transform: scale(0.85); opacity: 0.8; }
+}
+
+.candidate-ring {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  animation: pulse-gold 1s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.sequence-picker { background: rgba(240,192,64,0.07); border-radius: 6px; padding: 0.6rem; border: 1px solid rgba(240,192,64,0.3) !important; }
+.sequence-picker h3 { color: var(--gold) !important; }
+
+.sequence-option {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.4;
+}
+.sequence-option:hover:not(:disabled) { background: rgba(240,192,64,0.15); border-color: var(--gold); }
+
 /* ─── Scrollbar styling ─────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface); }

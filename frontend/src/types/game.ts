@@ -30,12 +30,14 @@ export interface GameState {
   gameOver: boolean;
   winner: 'player' | 'ai' | null;
   message: string;
+  pendingSequenceChoice?: Sequence[];  // set when player must choose which 5 chips to lock
 }
 
 export type Move =
-  | { type: 'place';    cardId: string; row: number; col: number }
-  | { type: 'remove';   cardId: string; row: number; col: number }
-  | { type: 'deadcard'; cardId: string };
+  | { type: 'place';          cardId: string; row: number; col: number }
+  | { type: 'remove';         cardId: string; row: number; col: number }
+  | { type: 'deadcard';       cardId: string }
+  | { type: 'chooseSequence'; cells: { row: number; col: number }[] };
 
 // ─── Frontend-only helpers ────────────────────────────────────────────────────
 

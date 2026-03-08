@@ -7,16 +7,18 @@ interface Props {
   row: number;
   col: number;
   isValidTarget: boolean;   // highlighted because selected card can go here
+  isHighlighted: boolean;   // highlighted as a sequence choice candidate
   onClick: (row: number, col: number) => void;
 }
 
-export default function BoardCell({ cell, row, col, isValidTarget, onClick }: Props) {
+export default function BoardCell({ cell, row, col, isValidTarget, isHighlighted, onClick }: Props) {
   const { rank, suit, color } = formatCardValue(cell.card);
   const isWild = cell.card === 'W';
 
   let className = 'board-cell';
   if (isWild) className += ' wild-corner';
   if (isValidTarget) className += ' valid-target';
+  if (isHighlighted) className += ' sequence-candidate';
   if (cell.inSequence) className += ' in-sequence';
 
   return (
@@ -39,6 +41,9 @@ export default function BoardCell({ cell, row, col, isValidTarget, onClick }: Pr
 
       {/* Valid target pulse ring */}
       {isValidTarget && <div className="target-ring" />}
+
+      {/* Sequence candidate highlight ring */}
+      {isHighlighted && <div className="candidate-ring" />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Context } from 'hono';
-import { createInitialGameState, applyPlayerMove, applyAITurn, Move } from './gameEngine';
+import { createInitialGameState, applyPlayerMove, applyAITurn, applyChooseSequence, Move } from './gameEngine';
 import { getBestAIMove } from './ai';
 
 interface Env {
@@ -39,17 +39,33 @@ export async function handleMove(c: Context<{ Bindings: Env }>): Promise<Respons
     return c.json({ error: 'Not your turn' }, 400);
   }
 
-  // Apply player move
-  try {
-    state = applyPlayerMove(state, move);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Invalid move';
-    return c.json({ error: message }, 400);
-  }
+  // Handle sequence choice (no card played — player is locking in their sequence)
+  if (move.type === 'chooseSequence') {
+    try {
+      state = applyChooseSequence(state, move);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Invalid sequence choice';
+      return c.json({ error: message }, 400);
+    }
+    if (state.gameOver) return c.json({ gameState: state });
+  } else {
+    // Apply regular player move
+    try {
+      state = applyPlayerMove(state, move);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Invalid move';
+      return c.json({ error: message }, 400);
+    }
 
-  // If game ended after player move, return immediately
-  if (state.gameOver) {
-    return c.json({ gameState: state });
+    // If game ended after player move, return immediately
+    if (state.gameOver) {
+      return c.json({ gameState: state });
+    }
+
+    // If player must choose a sequence, return immediately (no AI turn yet)
+    if (state.pendingSequenceChoice) {
+      return c.json({ gameState: state });
+    }
   }
 
   // Run AI move only if the player's move ended their turn

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { GameState, Card, Move } from '../../types/game';
-import { getValidPositions, isOneEyedJack } from '../../types/game';
+import type { GameState, Card, Move, Sequence } from '../../types/game';
+import { getValidPositions, isOneEyedJack, formatCardValue } from '../../types/game';
 import { apiStartGame, apiMove } from '../../api/client';
 import Board from './Board';
 import CardHand from './CardHand';
@@ -17,6 +17,7 @@ export default function GameScreen({ username, onLogout }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [lastPlayedInfo, setLastPlayedInfo] = useState<{ value: string; by: 'player' | 'ai' } | null>(null);
+  const [highlightedCells, setHighlightedCells] = useState<Set<string>>(new Set());
 
   // ─── Start a new game ─────────────────────────────────────────────────────
 
@@ -46,16 +47,19 @@ export default function GameScreen({ username, onLogout }: Props) {
     const start = Date.now();
     try {
       const { gameState: gs } = await apiMove(stateSnapshot, move);
-      // Only pad time when an AI move follows — dead card swaps are instant.
-      if (triggersAI) {
+      const nextState = gs as GameState;
+      // Pad time when an AI move followed — not for dead card swaps or pending sequence choices.
+      // Note: by the time the response arrives the AI has already moved, so currentTurn is
+      // back to 'player'. We detect "AI ran" by the absence of pendingSequenceChoice.
+      if (triggersAI && !nextState.pendingSequenceChoice) {
         const elapsed = Date.now() - start;
         const MIN_DELAY = 1500;
         if (elapsed < MIN_DELAY) {
           await new Promise(res => setTimeout(res, MIN_DELAY - elapsed));
         }
       }
-      setGameState(gs as GameState);
-      return gs as GameState;
+      setGameState(nextState);
+      return nextState;
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Move failed');
       return null;
@@ -107,13 +111,35 @@ export default function GameScreen({ username, onLogout }: Props) {
     }
   }
 
+  // ─── Sequence choice (when 6+ chips in a row) ─────────────────────────────
+
+  const pendingChoice = gameState?.pendingSequenceChoice ?? null;
+
+  async function handleChooseSequence(seq: Sequence) {
+    if (!gameState) return;
+    setHighlightedCells(new Set());
+    const snapshot = gameState;
+    await submitMove(snapshot, { type: 'chooseSequence', cells: seq.cells }, true);
+  }
+
+  function seqLabel(seq: Sequence): string {
+    return seq.cells
+      .map(({ row, col }) => {
+        const card = gameState!.board[row][col].card;
+        if (card === 'W') return '★';
+        const { rank, suit } = formatCardValue(card);
+        return `${rank}${suit}`;
+      })
+      .join(' · ');
+  }
+
   // ─── Compute valid targets for the selected card ───────────────────────────
 
-  const validTargets = (gameState && selectedCard && !gameState.gameOver && !isLoading)
+  const validTargets = (gameState && selectedCard && !pendingChoice && !gameState.gameOver && !isLoading)
     ? getValidPositions(gameState.board, selectedCard.value)
     : [];
 
-  const isPlayerTurn = gameState?.currentTurn === 'player' && !gameState.gameOver && !isLoading;
+  const isPlayerTurn = gameState?.currentTurn === 'player' && !gameState.gameOver && !isLoading && !pendingChoice;
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -168,6 +194,7 @@ export default function GameScreen({ username, onLogout }: Props) {
             <Board
               board={gameState.board}
               validTargets={validTargets}
+              highlightedCells={highlightedCells}
               onCellClick={handleCellClick}
             />
           </div>
@@ -206,7 +233,26 @@ export default function GameScreen({ username, onLogout }: Props) {
               </div>
             )}
 
-            {selectedCard && (
+            {pendingChoice && (
+              <div className="info-block sequence-picker">
+                <h3>Choose Your Sequence</h3>
+                <p className="hint-text">Hover to preview, click to lock in.</p>
+                {pendingChoice.map((seq, i) => (
+                  <button
+                    key={i}
+                    className="btn-secondary sequence-option"
+                    onMouseEnter={() => setHighlightedCells(new Set(seq.cells.map(c => `${c.row},${c.col}`)))}
+                    onMouseLeave={() => setHighlightedCells(new Set())}
+                    onClick={() => handleChooseSequence(seq)}
+                    disabled={isLoading}
+                  >
+                    Option {i + 1}: {seqLabel(seq)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!pendingChoice && selectedCard && (
               <div className="info-block selected-info">
                 <h3>Selected</h3>
                 <p>{selectedCard.value}</p>
@@ -229,7 +275,7 @@ export default function GameScreen({ username, onLogout }: Props) {
             selectedCardId={selectedCard?.id ?? null}
             onSelectCard={handleSelectCard}
             onSwapDeadCard={handleSwapDeadCard}
-            disabled={!isPlayerTurn}
+            disabled={!isPlayerTurn || !!pendingChoice}
           />
         </div>
       ) : (
