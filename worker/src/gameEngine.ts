@@ -323,6 +323,14 @@ export function applyPlayerMove(state: GameState, move: Move): GameState {
     return s;
   }
 
+  // Deck exhausted and AI has no cards — game is a bust
+  if (s.deck.length === 0 && s.aiHand.length === 0) {
+    s.gameOver = true;
+    s.winner = null;
+    s.message = 'Tie! The deck ran out — no winner this game.';
+    return s;
+  }
+
   s.currentTurn = 'ai';
   s.message = 'AI is thinking…';
   return s;
@@ -357,6 +365,14 @@ export function applyChooseSequence(state: GameState, move: { type: 'chooseSeque
     s.gameOver = true;
     s.winner = 'player';
     s.message = 'You win! Congratulations!';
+    return s;
+  }
+
+  // Deck exhausted and AI has no cards — game is a bust
+  if (s.deck.length === 0 && s.aiHand.length === 0) {
+    s.gameOver = true;
+    s.winner = null;
+    s.message = 'Tie! The deck ran out — no winner this game.';
     return s;
   }
 
@@ -413,6 +429,14 @@ export function applyAITurn(state: GameState, aiMove: Move): GameState {
     s.gameOver = true;
     s.winner = 'ai';
     s.message = 'AI wins! Better luck next time.';
+    return s;
+  }
+
+  // Deck exhausted and player has no cards — game is a bust
+  if (s.deck.length === 0 && s.playerHand.length === 0) {
+    s.gameOver = true;
+    s.winner = null;
+    s.message = 'Tie! The deck ran out — no winner this game.';
     return s;
   }
 

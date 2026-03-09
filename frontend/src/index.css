@@ -447,6 +447,22 @@ body {
 
 .gameover-card h2 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--gold); }
 .gameover-card p  { color: var(--text-muted); margin-bottom: 1.5rem; }
+.gameover-card .btn-secondary { margin-bottom: 0.75rem; margin-right: 0.75rem; }
+
+.gameover-banner {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
 
 /* ─── Last played card ──────────────────────────────────────────────────────── */
 @keyframes slide-in-card {

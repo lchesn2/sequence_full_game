@@ -18,6 +18,7 @@ export default function GameScreen({ username, onLogout }: Props) {
   const [errorMsg, setErrorMsg] = useState('');
   const [lastPlayedInfo, setLastPlayedInfo] = useState<{ value: string; by: 'player' | 'ai' } | null>(null);
   const [highlightedCells, setHighlightedCells] = useState<Set<string>>(new Set());
+  const [overlayDismissed, setOverlayDismissed] = useState(false);
 
   // ─── Start a new game ─────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ export default function GameScreen({ username, onLogout }: Props) {
     setErrorMsg('');
     setSelectedCard(null);
     setLastPlayedInfo(null);
+    setOverlayDismissed(false);
     try {
       const { gameState: gs } = await apiStartGame();
       setGameState(gs as GameState);
@@ -167,13 +169,34 @@ export default function GameScreen({ username, onLogout }: Props) {
       {errorMsg && <div className="error-banner">{errorMsg}</div>}
 
       {/* Game over overlay */}
-      {gameState?.gameOver && (
+      {gameState?.gameOver && !overlayDismissed && (
         <div className="gameover-overlay">
           <div className="gameover-card">
-            <h2>{gameState.winner === 'player' ? 'You Win!' : 'AI Wins!'}</h2>
+            <h2>
+              {gameState.winner === 'player'
+                ? 'You Win!'
+                : gameState.winner === 'ai'
+                ? 'AI Wins!'
+                : 'Tie — No Winner!'}
+            </h2>
             <p>{gameState.message}</p>
-            <button className="btn-primary" onClick={startGame}>Play Again</button>
+            {gameState.winner === 'ai' && (
+              <button className="btn-secondary" onClick={() => setOverlayDismissed(true)}>
+                View Board
+              </button>
+            )}
+            <button className="btn-primary" onClick={startGame}>
+              {gameState.winner === 'ai' ? 'New Game' : 'Play Again'}
+            </button>
           </div>
+        </div>
+      )}
+
+      {/* Dismissed overlay — sticky new game bar */}
+      {gameState?.gameOver && overlayDismissed && (
+        <div className="gameover-banner">
+          <span>AI wins! Inspect the board, then start a new game.</span>
+          <button className="btn-primary" onClick={startGame}>New Game</button>
         </div>
       )}
 
