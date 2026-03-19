@@ -211,8 +211,8 @@ body {
   grid-row: 1;
   overflow: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: safe center;
+  justify-content: safe center;
   padding: 1rem;
   background: var(--felt);
 }
@@ -531,3 +531,10 @@ body {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Firefox scrollbar (ignored by webkit browsers) */
+.board-wrapper,
+.game-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--surface);
+}
