@@ -23,10 +23,16 @@ export default function BoardCell({ cell, row, col, isValidTarget, isHighlighted
 
   return (
     <div className={className} onClick={() => onClick(row, col)}>
-      {/* Card label — small text showing rank+suit */}
-      <span className="cell-card-label" style={{ color: isWild ? 'gold' : color }}>
-        {isWild ? '★' : `${rank}${suit}`}
-      </span>
+      {/* Card label — stacked rank + suit in top-left corner */}
+      {!isWild && (
+        <span className="cell-card-label" style={{ color }}>
+          <span className="cell-rank">{rank}</span>
+          <span className="cell-suit">{suit}</span>
+        </span>
+      )}
+      {isWild && (
+        <span className="cell-card-label" style={{ color: 'gold' }}>★</span>
+      )}
 
       {/* Chip overlay */}
       {cell.chip === 'player' && (

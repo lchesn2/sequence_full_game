@@ -72,7 +72,8 @@ export async function handleMove(c: Context<{ Bindings: Env }>): Promise<Respons
   // (dead card swaps are free and keep currentTurn = 'player')
   if (state.currentTurn === 'ai') {
     try {
-      const aiMove = getBestAIMove(state);
+      // Pass only what the AI is allowed to know — strip the player's hand.
+      const aiMove = getBestAIMove({ ...state, playerHand: [] });
       state = applyAITurn(state, aiMove);
     } catch (err: unknown) {
       // AI error shouldn't crash the game — just return state as-is

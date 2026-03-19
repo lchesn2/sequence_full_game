@@ -262,6 +262,7 @@ body {
   overflow: hidden;
 }
 .board-cell:hover { box-shadow: 0 0 0 2px white; z-index: 1; }
+.board-cell:hover .chip { opacity: 0.25; transition: opacity 0.15s; }
 
 .board-cell.wild-corner { background: #2d6a4f; }
 .board-cell.in-sequence { background: #fff8dc; }
@@ -274,7 +275,6 @@ body {
 }
 
 .cell-card-label {
-  font-size: 10px;
   font-weight: 700;
   font-family: Georgia, serif;
   line-height: 1;
@@ -282,7 +282,13 @@ body {
   top: 3px;
   left: 4px;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
+
+.cell-rank { font-size: 12px; }
+.cell-suit { font-size: 11px; }
 
 /* ─── Chips ─────────────────────────────────────────────────────────────────── */
 .chip {
@@ -341,6 +347,28 @@ body {
 .hand-hint  { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem; }
 
 .hand-cards { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ─── AI face-down hand ─────────────────────────────────────────────────────── */
+.ai-hand-backs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 0.35rem;
+}
+
+.card-back {
+  width: 18px;
+  height: 26px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.15);
+  flex-shrink: 0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #1a3a6b 0px, #1a3a6b 3px,
+      #1e4a8a 3px, #1e4a8a 6px
+    );
+}
 
 /* ─── Playing card component ────────────────────────────────────────────────── */
 .playing-card {

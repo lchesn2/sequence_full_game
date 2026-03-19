@@ -261,7 +261,7 @@ export function deepClone<T>(val: T): T {
 
 // ─── Apply player move ────────────────────────────────────────────────────────
 
-export function applyPlayerMove(state: GameState, move: Move): GameState {
+export function applyPlayerMove(state: GameState, move: Exclude<Move, { type: 'chooseSequence' }>): GameState {
   const s = deepClone(state);
 
   // Locate the card in player hand
@@ -391,7 +391,7 @@ export function applyAIMove(state: GameState): GameState {
   return s; // placeholder — AI move is applied via applyAITurn below
 }
 
-export function applyAITurn(state: GameState, aiMove: Move): GameState {
+export function applyAITurn(state: GameState, aiMove: Exclude<Move, { type: 'chooseSequence' }>): GameState {
   const s = deepClone(state);
 
   const cardIdx = s.aiHand.findIndex((c: Card) => c.id === aiMove.cardId);
@@ -417,7 +417,7 @@ export function applyAITurn(state: GameState, aiMove: Move): GameState {
     aiActionMessage = `AI played a one-eyed Jack and removed your chip from the ${cardLabel} cell!`;
   } else {
     s.board[row][col].chip = 'ai';
-    aiActionMessage = '';
+    aiActionMessage = `AI played ${formatBoardCard(card.value)}.`;
   }
 
   s.discardPile.push(card);
@@ -441,9 +441,7 @@ export function applyAITurn(state: GameState, aiMove: Move): GameState {
   }
 
   s.currentTurn = 'player';
-  s.message = aiActionMessage
-    ? `${aiActionMessage} Your turn.`
-    : 'Your turn — select a card then click a board cell.';
+  s.message = `${aiActionMessage} Your turn — select a card then click a board cell.`;
   return s;
 }
 

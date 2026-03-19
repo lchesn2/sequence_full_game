@@ -231,7 +231,11 @@ export default function GameScreen({ username, onLogout }: Props) {
 
             <div className="info-block">
               <h3>AI Hand</h3>
-              <p>{gameState.aiHand.length} cards</p>
+              <div className="ai-hand-backs">
+                {Array.from({ length: gameState.aiHand.length }).map((_, i) => (
+                  <div key={i} className="card-back" />
+                ))}
+              </div>
             </div>
 
             <div className="info-block legend">
